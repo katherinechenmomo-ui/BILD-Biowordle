@@ -1,1 +1,76 @@
+import random
+import datetime
+import pandas as pd
 
+WORD_LENGTH = 5
+MAX_GUESSES = 6
+THEMES = ['Cell Biology', 'Genetics and DNA', 'Anatomy', 'Ecology', 'Botany']
+
+def get_todays_theme():
+
+    '''Picks the theme of the day. Monday = 0 ... Sunday = 6, and the
+    5 themes loop around so every day of the week has one'''
+
+    day = datetime.date.today().weekday()
+
+    theme = THEMES[day % len(THEMES)]
+
+    return theme
+
+
+def pick_secret_word(word_data, theme):
+
+    '''Filters the DataFrame to today's theme and returns a random word and its definition'''
+
+    theme_words = word_data[word_data['theme'] == theme]
+
+    chosen = theme_words.sample(1)
+
+    secret = str(chosen['word'].values[0])
+    definition = str(chosen['definition'].values[0])
+
+    return secret, definition
+
+
+def score_guess(guess, secret):
+
+    '''Checks each letter of the guess against the secret word and returns a list of
+    'green' (right letter, right spot), 'yellow' (right letter, wrong spot),
+    or 'gray' (letter not in the word). Repeated letters are handled correctly.'''
+
+    feedback = ['gray'] * WORD_LENGTH
+    leftover = []   # secret letters that were NOT matched exactly
+
+    # first pass: exact matches
+    for i in range(WORD_LENGTH):
+
+        if guess[i] == secret[i]:
+
+            feedback[i] = 'green'
+
+        else:
+
+            leftover.append(secret[i])
+
+    # second pass: right letter, wrong spot
+    for i in range(WORD_LENGTH):
+
+        if feedback[i] == 'gray' and guess[i] in leftover:
+
+            feedback[i] = 'yellow'
+            leftover.remove(guess[i])   # a letter can only be counted once
+
+    return feedback
+
+
+def is_win(feedback):
+
+    '''Returns True if every letter is green'''
+
+    for color in feedback:
+
+        if color != 'green':
+
+            return False
+
+    return True
